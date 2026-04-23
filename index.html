@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEIL USSR — CLASSIFIED SYSTEM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=Tajawal:wght@700;800&family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* ═══ TOKENS ═══ */
+:root{
+  --red:#cc0000; --red2:#ff2626; --red3:#7a0000; --red-glow:rgba(255,30,30,.6);
+  --gold:#d4a843; --gold-glow:rgba(212,168,67,.5);
+  --w:#f0ece4; --w2:#b8b0a0; --w3:#5a5550;
+  --bg:#030202; --bg2:#0a0606; --discord:#5865f2;
+  --mono:'Share Tech Mono',monospace;
+  --display:'Bebas Neue',sans-serif;
+  --serif:'Cormorant Garamond',serif;
+  --body:'Inter',sans-serif;
+  --ar:'Tajawal',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+html,body{width:100%;background:var(--bg);color:var(--w);font-family:var(--mono);cursor:crosshair}
+body{overflow-x:hidden;overflow-y:hidden}
+body.unlocked{overflow-y:auto}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--red3);border-radius:3px}
+
+/* ═══ FIXED BG LAYERS ═══ */
+#rain-canvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.08;mix-blend-mode:overlay;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.scanlines{position:fixed;inset:0;z-index:999;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.1) 2px,rgba(0,0,0,.1) 4px)}
+.vignette{position:fixed;inset:0;z-index:998;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 30%,rgba(60,0,0,.28) 65%,rgba(0,0,0,.9) 100%)}
+
+/* ═══ PERSISTENT HUD ═══ */
+.hud{position:fixed;font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--red);z-index:500}
+.hud-tl{top:14px;left:16px;line-height:1.8}
+.hud-tr{top:14px;right:16px;text-align:right;line-height:1.8}
+.hud-bl{bottom:16px;left:16px}
+.blink{animation:blink 1.2s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.rec-dot{display:inline-block;width:7px;height:7px;background:var(--red);border-radius:50%;margin-right:5px;vertical-align:middle;animation:blink 1s step-end infinite}
+.lang{position:fixed;top:58px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:600}
+.lang span{font-family:var(--mono);font-size:9px;letter-spacing:.1em;padding:3px 7px;border:1px solid rgba(204,0,0,.4);color:var(--w2);cursor:pointer;transition:all .2s}
+.lang span.active{background:var(--red);color:#fff;border-color:var(--red)}
+.lang span:hover:not(.active){border-color:var(--red);color:var(--w)}
+
+/* ═══════════════════════════════════
+   GATE — Signal Tracing Sequence
+═══════════════════════════════════ */
+#gate{position:fixed;inset:0;z-index:2000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s ease}
+#gate.glitching{animation:gateGlitch .9s cubic-bezier(.6,0,.4,1) forwards}
+@keyframes gateGlitch{
+  0%{opacity:1;transform:none;filter:none}
+  20%{transform:translate(-10px,5px);filter:hue-rotate(-30deg) contrast(2)}
+  30%{transform:translate(15px,-3px) skewX(5deg);filter:invert(.3)}
+  45%{transform:translate(-8px,2px);filter:brightness(3) contrast(1.8)}
+  60%{transform:scale(1.05);filter:blur(4px) hue-rotate(20deg)}
+  80%{opacity:.3;transform:scale(1.15);filter:blur(12px)}
+  100%{opacity:0;transform:scale(1.2);filter:blur(20px);pointer-events:none}
+}
+
+/* Waveform */
+.gate-main-title{
+  font-family:var(--display);
+  font-size:clamp(64px,11vw,170px);
+  letter-spacing:.04em;
+  color:var(--w);
+  margin-bottom:22px;
+  line-height:1;
+  text-align:center;
+  user-select:none;
+  position:relative;
+  /* Layered 3D depth — crisp front face, stacked shadows receding into space */
+  text-shadow:
+    1px 1px 0 rgba(255,255,255,.1),
+    2px 2px 0 #1a0303,
+    3px 3px 0 #150202,
+    4px 4px 0 #100101,
+    5px 5px 0 #0a0101,
+    6px 6px 0 #050000,
+    0 0 22px rgba(255,30,30,.55),
+    0 0 60px rgba(200,0,0,.38),
+    0 0 120px rgba(150,0,0,.22);
+  transform:perspective(800px) rotateX(6deg);
+  animation:titleIn 1s cubic-bezier(.16,1,.3,1) forwards;
+}
+.gate-main-title::after{
+  content:attr(data-text);position:absolute;inset:0;color:var(--red);
+  clip-path:inset(0 100% 0 0);animation:glitchLayer 7s infinite 3s;pointer-events:none;
+}
+@keyframes titleIn{
+  from{opacity:0;transform:perspective(800px) rotateX(20deg) translateY(30px) scaleY(.9);filter:blur(6px);letter-spacing:.2em}
+  to{opacity:1;transform:perspective(800px) rotateX(6deg);filter:none;letter-spacing:.04em}
+}
+html[dir=rtl] .gate-main-title{font-family:var(--ar);font-size:clamp(50px,9vw,130px)}
+
+/* ═══ GATE RADAR (top-left surveillance widget) ═══ */
+.gate-radar{position:fixed;top:30px;left:30px;width:120px;height:120px;z-index:1600;opacity:.75;pointer-events:none}
+.gate-radar svg{width:100%;height:100%;filter:drop-shadow(0 0 6px rgba(255,30,30,.5))}
+.radar-sweep{transform-origin:60px 60px;animation:radarSpin 4s linear infinite}
+@keyframes radarSpin{to{transform:rotate(360deg)}}
+.radar-label{position:absolute;bottom:-14px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:8px;letter-spacing:.22em;color:var(--red2)}
+
+/* ═══ FLOATING 3D WIREFRAME SHAPES ═══ */
+.float-shape{position:fixed;pointer-events:none;z-index:5;opacity:.35}
+.float-shape svg{width:100%;height:100%;filter:drop-shadow(0 0 8px rgba(255,30,30,.4))}
+.float-shape .wire{fill:none;stroke:var(--red);stroke-width:.8;opacity:.6}
+.float-shape.s1{top:15%;left:8%;width:90px;height:90px;animation:float1 14s ease-in-out infinite}
+.float-shape.s2{top:22%;right:10%;width:70px;height:70px;animation:float2 18s ease-in-out infinite}
+.float-shape.s3{bottom:18%;left:14%;width:75px;height:75px;animation:float3 16s ease-in-out infinite}
+.float-shape.s4{bottom:25%;right:8%;width:85px;height:85px;animation:float4 20s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-20px) rotate(180deg)}}
+@keyframes float2{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-15px,15px) rotate(-180deg)}}
+@keyframes float3{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(20px,-10px) rotate(270deg)}}
+@keyframes float4{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-18px,-18px) rotate(-270deg)}}
+
+/* Password stage */
+#gate-pass{display:flex;flex-direction:column;align-items:center;gap:20px;width:min(460px,92vw);margin-top:12px;animation:slideUp .8s cubic-bezier(.16,1,.3,1) .4s both;position:relative}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+.gate-title{font-family:var(--serif);font-size:clamp(22px,3vw,32px);color:var(--w2);letter-spacing:.02em;font-weight:500;text-align:center;margin-bottom:8px;font-style:italic;animation:fadeIn .8s ease .2s both}
+.gate-sub{font-family:var(--mono);font-size:10px;letter-spacing:.28em;color:var(--red2);animation:blink 1.8s step-end infinite;margin-bottom:18px}
+
+/* Input with animated HUD brackets */
+.gate-input-wrap{position:relative;width:100%;margin-top:12px}
+.gate-input-wrap::before,.gate-input-wrap::after{
+  content:'';position:absolute;top:50%;width:10px;height:26px;
+  border:1px solid var(--red2);pointer-events:none;
+  animation:bracketBob 1.8s ease-in-out infinite;
+}
+.gate-input-wrap::before{left:-18px;transform:translateY(-50%);border-right:none}
+.gate-input-wrap::after{right:-18px;transform:translateY(-50%);border-left:none;animation-delay:.9s}
+@keyframes bracketBob{
+  0%,100%{opacity:.4;box-shadow:0 0 0 rgba(255,30,30,0)}
+  50%{opacity:1;box-shadow:0 0 10px rgba(255,30,30,.6)}
+}
+.gate-input-row{display:flex;width:100%}
+.gate-access-pending{
+  font-family:var(--mono);font-size:9px;letter-spacing:.3em;color:var(--red2);
+  text-align:center;margin-top:4px;opacity:.75;
+  animation:pendingPulse 1.6s ease-in-out infinite;
+}
+.gate-access-pending::before{content:'◉ ';animation:blink 1s step-end infinite}
+@keyframes pendingPulse{0%,100%{opacity:.5}50%{opacity:1}}
+#gate-input{flex:1;background:transparent;border:1px solid rgba(255,30,30,.5);color:var(--w);font-family:var(--mono);font-size:12px;letter-spacing:.2em;padding:14px 18px;outline:none;text-transform:uppercase;transition:border-color .25s,box-shadow .25s}
+#gate-input:focus{border-color:var(--red2);box-shadow:0 0 18px rgba(255,30,30,.3)}
+#gate-input::placeholder{color:var(--w3);letter-spacing:.1em;text-transform:none}
+.gate-btn{background:var(--red);color:#fff;border:1px solid var(--red);font-family:var(--mono);font-size:11px;letter-spacing:.2em;padding:14px 22px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.gate-btn:hover{background:var(--red2);box-shadow:0 0 20px rgba(255,30,30,.4)}
+#gate-error{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--red2);height:16px;opacity:0;transition:opacity .15s}
+#gate-error.show{opacity:1;animation:errGlitch .5s ease}
+@keyframes errGlitch{
+  0%,100%{transform:none}
+  20%{transform:translate(-3px,1px) skewX(-3deg)}
+  40%{transform:translate(3px,-1px) skewX(2deg)}
+  60%{transform:translate(-2px,2px)}
+  80%{transform:translate(2px,-2px)}
+}
+
+/* ═══════════════════════════════════
+   HERO SECTION
+═══════════════════════════════════ */
+#main{opacity:0;transition:opacity 1s ease .2s}
+#main.ready{opacity:1}
+.section{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 5vw}
+
+/* Hero */
+.hero-tag{font-family:var(--mono);font-size:11px;letter-spacing:.25em;color:var(--w);border:1px solid rgba(255,30,30,.6);padding:5px 20px;margin-bottom:30px;background:rgba(120,0,0,.12)}
+.hero-title{
+  font-family:var(--display);font-size:clamp(72px,14vw,220px);line-height:.86;letter-spacing:.025em;text-align:center;color:var(--w);position:relative;user-select:none;
+  text-shadow:0 0 18px rgba(255,30,30,.65),0 0 55px rgba(200,0,0,.4),0 0 110px rgba(150,0,0,.25),3px 3px 0 rgba(0,0,0,1),6px 6px 0 rgba(0,0,0,.5),8px 8px 16px rgba(0,0,0,.45);
+}
+.hero-title::before{content:attr(data-text);position:absolute;inset:0;color:var(--red2);opacity:0;animation:shimmer 6s ease-in-out infinite 2s;pointer-events:none}
+.hero-title::after{content:attr(data-text);position:absolute;inset:0;color:var(--red);clip-path:inset(0 100% 0 0);animation:glitchLayer 7s infinite 2.5s;pointer-events:none}
+@keyframes shimmer{0%,100%{opacity:0}50%{opacity:.22;text-shadow:0 0 40px rgba(255,0,0,.9)}}
+@keyframes glitchLayer{
+  0%,91%,100%{clip-path:inset(0 100% 0 0);transform:none;opacity:0}
+  92%{clip-path:inset(25% 0 55% 0);transform:translate(-4px,2px) skewX(-2deg);opacity:.75}
+  93%{clip-path:inset(65% 0 5% 0);transform:translate(4px,-2px) skewX(1deg);opacity:.55}
+  94%{clip-path:inset(40% 0 30% 0);transform:translate(-2px,0);opacity:.6}
+  95%{clip-path:inset(0 100% 0 0);opacity:0}
+}
+.hero-sub{margin-top:30px;text-align:center;line-height:2.2}
+.hero-sub p{font-family:var(--body);font-size:14px;letter-spacing:.1em;color:var(--w2);font-weight:300}
+.hero-sub .ar-w{color:var(--w);font-weight:600}
+.hero-sub .ar-r{color:var(--red2)}
+.hero-sub .credits-line{margin-top:8px;font-size:10px;color:rgba(160,140,140,.55);letter-spacing:.22em}
+
+.scroll-hint{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;letter-spacing:.3em;color:var(--w3);display:flex;flex-direction:column;align-items:center;gap:10px;animation:bob 2.5s ease-in-out infinite}
+.scroll-hint::after{content:'';width:1px;height:30px;background:linear-gradient(180deg,var(--red2),transparent)}
+@keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
+
+/* Arabic */
+html[dir=rtl] .hero-sub p,html[dir=rtl] .hero-tag,html[dir=rtl] .scroll-hint{font-family:var(--ar);letter-spacing:0}
+html[dir=rtl] .hero-title{font-family:var(--ar);font-size:clamp(56px,10vw,160px)}
+
+/* ═══════════════════════════════════
+   EVIDENCE BOARD
+═══════════════════════════════════ */
+.section-hdr{width:100%;max-width:1400px;display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:44px;opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .8s ease}
+.section-hdr.in{opacity:1;transform:none}
+.section-meta{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--red2);text-align:right;line-height:1.9}
+
+.evidence-wrap{width:100vw;overflow:hidden;padding:30px 0 40px;perspective:1400px}
+.evidence-track{display:flex;gap:22px;padding:0 5vw;cursor:grab;transition:transform .6s cubic-bezier(.16,1,.3,1);will-change:transform}
+.evidence-track:active{cursor:grabbing}
+.card{
+  flex:0 0 260px;height:440px;position:relative;overflow:hidden;
+  background:rgba(15,8,8,.75);border:1px solid rgba(255,30,30,.15);
+  transition:transform .6s cubic-bezier(.16,1,.3,1),border-color .4s,box-shadow .5s;
+  transform-style:preserve-3d;display:flex;flex-direction:column;justify-content:space-between;padding:18px;
+}
+.card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 30%,rgba(255,30,30,.04) 100%);pointer-events:none}
+.card.owner{border-color:rgba(212,168,67,.35);background:linear-gradient(155deg,rgba(40,28,10,.7),rgba(12,6,6,.85))}
+.card.owner:hover{border-color:var(--gold);box-shadow:0 0 40px rgba(212,168,67,.3),0 0 80px rgba(212,168,67,.15);transform:translateY(-14px) rotateY(-6deg) scale(1.02)}
+.card.member{border-color:rgba(255,30,30,.18)}
+.card.member:hover{border-color:var(--red2);box-shadow:0 0 40px rgba(255,30,30,.25),0 0 80px rgba(204,0,0,.1);transform:translateY(-14px) rotateY(6deg) scale(1.02)}
+.card.credits{border-color:rgba(212,168,67,.25);background:linear-gradient(155deg,rgba(30,22,8,.6),rgba(10,6,4,.85))}
+.card.credits:hover{border-color:var(--gold);box-shadow:0 0 34px rgba(212,168,67,.25);transform:translateY(-12px) rotateY(-4deg) scale(1.02)}
+
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--mono);font-size:8px;letter-spacing:.2em;color:rgba(255,255,255,.4)}
+.card-top .case-id{color:var(--red2)}
+.card-top .corner-dots{display:flex;flex-direction:column;gap:3px}
+.card-top .corner-dots span{display:block;width:2px;height:2px;background:currentColor}
+
+.card-center{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.card-rank{font-family:var(--mono);font-size:9px;letter-spacing:.3em;margin-bottom:14px}
+.card.owner .card-rank{color:var(--gold);text-shadow:0 0 10px var(--gold-glow)}
+.card.credits .card-rank{color:var(--gold)}
+.card.member .card-rank{color:var(--red2)}
+.card-name{font-family:var(--display);font-size:30px;letter-spacing:.05em;line-height:1;color:var(--w)}
+.card.owner .card-name{text-shadow:0 0 16px var(--gold-glow);color:#f5d788}
+.card.credits .card-name{color:#e6c572}
+.card-role{margin-top:10px;font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:rgba(255,255,255,.45)}
+
+.card-bot{display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--mono);font-size:8px;letter-spacing:.18em;color:rgba(255,255,255,.4)}
+.card-status{display:flex;align-items:center;gap:5px;color:#4ade80}
+.card-status::before{content:'';width:5px;height:5px;background:#4ade80;border-radius:50%;animation:blink 1.4s step-end infinite;box-shadow:0 0 6px #4ade80}
+.card.owner .card-status::before{background:#4ade80;box-shadow:0 0 6px #4ade80}
+.card-decrypt{color:var(--red2);cursor:pointer;transition:color .2s}
+.card-decrypt:hover{color:var(--w)}
+
+/* Evidence nav */
+.ev-nav{display:flex;gap:12px;margin-top:24px;justify-content:center}
+.ev-btn{width:44px;height:44px;border:1px solid rgba(255,30,30,.4);background:transparent;color:var(--w);font-family:var(--mono);font-size:16px;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center}
+.ev-btn:hover{background:var(--red);border-color:var(--red);box-shadow:0 0 18px rgba(255,30,30,.35)}
+
+/* ═══════════════════════════════════
+   ROSTER LIST (full member list section)
+═══════════════════════════════════ */
+.roster-wrap{width:100%;max-width:1100px;margin-top:30px;display:flex;flex-direction:column;gap:32px}
+
+/* Tier headers */
+.tier-header{
+  display:flex;align-items:center;gap:14px;margin-bottom:14px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.3em;
+}
+.tier-header::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,currentColor,transparent);opacity:.4}
+.tier-header.owners{color:var(--gold)}
+.tier-header.credits{color:#e6c572}
+.tier-header.members{color:var(--red2)}
+
+/* Owners row — prominent centered */
+.tier-owners{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+.owner-card{
+  flex:0 0 260px;padding:22px 20px;
+  border:2px solid var(--gold);
+  background:linear-gradient(155deg,rgba(50,35,10,.55),rgba(18,12,4,.85));
+  box-shadow:0 0 30px rgba(212,168,67,.2),inset 0 0 20px rgba(212,168,67,.05);
+  position:relative;overflow:hidden;cursor:pointer;
+  transition:transform .4s cubic-bezier(.16,1,.3,1),box-shadow .4s;
+}
+.owner-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 40%,rgba(212,168,67,.08) 100%);pointer-events:none}
+.owner-card:hover{transform:translateY(-6px);box-shadow:0 0 45px rgba(212,168,67,.4),0 12px 30px rgba(0,0,0,.5),inset 0 0 25px rgba(212,168,67,.08)}
+.owner-card .oc-num{font-size:8px;letter-spacing:.22em;color:rgba(212,168,67,.55);margin-bottom:8px}
+.owner-card .oc-rank{font-family:var(--mono);font-size:9px;letter-spacing:.3em;color:var(--gold);margin-bottom:10px;text-shadow:0 0 10px rgba(212,168,67,.4)}
+.owner-card .oc-name{font-family:var(--display);font-size:32px;letter-spacing:.05em;color:#f5d788;text-shadow:0 0 20px rgba(212,168,67,.45),2px 2px 0 rgba(0,0,0,.6)}
+html[dir=rtl] .owner-card .oc-name{font-family:var(--ar)}
+.owner-card .oc-status{margin-top:12px;display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:8px;letter-spacing:.2em;color:#4ade80}
+.owner-card .oc-status::before{content:'';width:5px;height:5px;background:#4ade80;border-radius:50%;animation:blink 1.4s step-end infinite;box-shadow:0 0 6px #4ade80}
+
+/* Credits tier (Naif) — single centered card with distinct warm style */
+.tier-credits{display:flex;justify-content:center}
+.credits-card{
+  flex:0 0 320px;padding:18px 22px;
+  border:1px solid rgba(212,168,67,.4);
+  background:linear-gradient(155deg,rgba(30,22,8,.5),rgba(12,7,3,.85));
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  cursor:pointer;transition:all .3s;position:relative;overflow:hidden;
+}
+.credits-card::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(212,168,67,.05),transparent);animation:creditsShimmer 4s linear infinite;pointer-events:none}
+@keyframes creditsShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.credits-card:hover{border-color:var(--gold);box-shadow:0 0 24px rgba(212,168,67,.25);transform:translateY(-3px)}
+.credits-card .cc-num{font-family:var(--mono);font-size:8px;letter-spacing:.22em;color:rgba(212,168,67,.5)}
+.credits-card .cc-name{font-family:var(--display);font-size:22px;letter-spacing:.08em;color:#e6c572;flex:1;text-align:center}
+html[dir=rtl] .credits-card .cc-name{font-family:var(--ar)}
+.credits-card .cc-tag{font-family:var(--mono);font-size:8px;letter-spacing:.2em;padding:3px 10px;border:1px solid rgba(212,168,67,.4);background:rgba(100,80,20,.14);color:#c8a96e}
+html[dir=rtl] .credits-card .cc-tag{font-family:var(--ar)}
+
+/* Members grid */
+.roster-list{width:100%;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.roster-item{
+  padding:12px 16px;border:1px solid rgba(255,255,255,.06);background:rgba(10,6,6,.55);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  opacity:0;transform:translateX(-14px);transition:all .3s;cursor:pointer;
+}
+.roster-item.in{animation:rosterIn .5s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes rosterIn{to{opacity:1;transform:none}}
+.roster-item:hover{background:rgba(204,0,0,.08);border-color:rgba(255,30,30,.3)}
+.r-num{font-family:var(--mono);font-size:8px;color:var(--w3);letter-spacing:.1em}
+.r-name{font-family:var(--display);font-size:17px;letter-spacing:.05em;color:var(--w);flex:1;margin:0 10px}
+html[dir=rtl] .r-name{font-family:var(--ar);font-size:14px}
+.r-tag{font-family:var(--mono);font-size:7.5px;letter-spacing:.2em;padding:2px 7px;border:1px solid;color:var(--red2);border-color:rgba(255,30,30,.25)}
+
+/* Enhanced 3D section titles */
+.section-title{
+  font-family:var(--serif);font-size:clamp(40px,5.5vw,72px);color:var(--w);
+  letter-spacing:.01em;line-height:1;position:relative;
+  text-shadow:
+    1px 1px 0 rgba(255,255,255,.08),
+    2px 2px 0 #1a0303,
+    3px 3px 0 #140202,
+    4px 4px 0 #0d0101,
+    5px 5px 0 #080000,
+    0 0 25px rgba(255,30,30,.4),
+    0 0 60px rgba(150,0,0,.25);
+}
+
+/* ═══════════════════════════════════
+   MAINFRAME / DISCORD FOOTER
+═══════════════════════════════════ */
+.mainframe{position:relative;width:min(900px,92vw);padding:50px 40px;border:1px solid rgba(88,101,242,.3);background:linear-gradient(135deg,rgba(10,8,20,.8),rgba(20,10,30,.6));text-align:center;overflow:hidden}
+.mainframe::before{content:'';position:absolute;inset:0;background:
+  radial-gradient(circle at 20% 30%,rgba(88,101,242,.15),transparent 40%),
+  radial-gradient(circle at 80% 70%,rgba(255,30,30,.1),transparent 40%);pointer-events:none;animation:mfPulse 6s ease-in-out infinite}
+@keyframes mfPulse{0%,100%{opacity:.7}50%{opacity:1}}
+.mf-tag{font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:rgba(88,101,242,.8);margin-bottom:14px}
+.mf-title{font-family:var(--serif);font-size:clamp(34px,5vw,54px);color:var(--w);line-height:1.1;margin-bottom:18px;font-weight:500}
+.mf-sub{font-family:var(--body);font-size:13px;color:var(--w2);margin-bottom:36px;font-weight:300;letter-spacing:.02em}
+html[dir=rtl] .mf-tag,html[dir=rtl] .mf-sub{font-family:var(--ar);letter-spacing:0}
+.mf-link{position:relative;z-index:2;display:inline-flex;align-items:center;gap:14px;padding:16px 40px;font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:#fff;background:rgba(88,101,242,.15);border:1px solid var(--discord);text-decoration:none;transition:all .3s;overflow:hidden}
+.mf-link::before{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent,rgba(88,101,242,.5),transparent);transform:translateX(-101%);transition:transform .6s}
+.mf-link:hover{background:var(--discord);box-shadow:0 0 40px rgba(88,101,242,.5),0 0 80px rgba(88,101,242,.3)}
+.mf-link:hover::before{transform:translateX(101%)}
+.mf-link .pulse-dot{width:8px;height:8px;background:#fff;border-radius:50%;animation:pulseDot 1.6s ease-in-out infinite;box-shadow:0 0 10px #fff}
+@keyframes pulseDot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.6}}
+.mf-link .disc-icon{width:18px;height:18px;fill:currentColor}
+
+.mf-meta{display:flex;justify-content:space-between;align-items:center;margin-top:28px;font-family:var(--mono);font-size:8px;letter-spacing:.22em;color:var(--w3);border-top:1px solid rgba(88,101,242,.15);padding-top:18px;flex-wrap:wrap;gap:10px}
+.mf-meta-dot{display:inline-block;width:5px;height:5px;background:#4ade80;border-radius:50%;margin-right:6px;animation:blink 2s step-end infinite}
+
+.footer-note{margin-top:60px;text-align:center;font-family:var(--mono);font-size:8px;letter-spacing:.3em;color:var(--w3);line-height:2}
+.footer-naif{color:var(--red2);font-weight:600;letter-spacing:.35em;text-shadow:0 0 10px rgba(255,30,30,.4)}
+
+/* Reveal on scroll */
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1)}
+.reveal.in{opacity:1;transform:none}
+
+/* Decrypt effect on section titles */
+.decrypt{display:inline-block}
+.decrypt .ch{display:inline-block;opacity:0;transform:translateY(15px) rotateX(-60deg);transition:all .5s cubic-bezier(.16,1,.3,1)}
+.decrypt.in .ch{opacity:1;transform:none}
+
+/* ═══ BIOGRAPHY MODAL — SUBJECT FILE TERMINAL ═══ */
+.bio-overlay{position:fixed;inset:0;z-index:1500;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .35s ease;padding:20px}
+.bio-overlay.open{pointer-events:all;opacity:1}
+.bio-bg{position:absolute;inset:0;background:rgba(0,0,0,.95);backdrop-filter:blur(10px)}
+
+.bio-panel{
+  position:relative;z-index:1;
+  width:min(600px,100%);max-height:92vh;overflow-y:auto;
+  background:#000;
+  border:1px solid #ff0000;
+  padding:22px;
+  font-family:'Share Tech Mono',monospace;
+  color:#ff0000;
+  transform:translateY(40px) scale(.95);opacity:0;
+  transition:transform .5s cubic-bezier(.16,1,.3,1) .08s,opacity .4s ease .08s;
+  box-shadow:0 0 40px rgba(255,0,0,.3),inset 0 0 30px rgba(255,0,0,.04);
+}
+.bio-overlay.open .bio-panel{transform:none;opacity:1}
+.bio-panel::-webkit-scrollbar{width:4px}
+.bio-panel::-webkit-scrollbar-thumb{background:#ff0000;opacity:.5}
+
+/* Corner crops */
+.bio-panel::before,.bio-panel::after{
+  content:'';position:absolute;width:12px;height:12px;border:1px solid #ff0000;
+}
+.bio-panel::before{top:6px;left:6px;border-right:none;border-bottom:none}
+.bio-panel::after{top:6px;right:6px;border-left:none;border-bottom:none}
+.bio-corner-bl,.bio-corner-br{
+  position:absolute;width:12px;height:12px;border:1px solid #ff0000;
+}
+.bio-corner-bl{bottom:6px;left:6px;border-right:none;border-top:none}
+.bio-corner-br{bottom:6px;right:6px;border-left:none;border-top:none}
+
+/* Flicker + scanlines on whole card */
+.bio-panel{animation:crtFlicker 6s infinite}
+@keyframes crtFlicker{
+  0%,96%,100%{opacity:1;filter:none}
+  96.5%{opacity:.85;filter:brightness(1.2)}
+  97%{opacity:1}
+  97.5%{opacity:.7;filter:brightness(.8) contrast(1.3)}
+  98%{opacity:1;filter:none}
+}
+.bio-scanlines{position:absolute;inset:0;pointer-events:none;z-index:5;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.35) 2px,rgba(0,0,0,.35) 3px);
+  opacity:.45;animation:scanMove 8s linear infinite}
+@keyframes scanMove{0%{background-position:0 0}100%{background-position:0 100px}}
+
+/* Header row */
+.bio-head{display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid #ff0000;margin-bottom:14px;font-size:14px;letter-spacing:.12em;position:relative;z-index:2}
+.bio-head-id{font-weight:700;text-transform:uppercase}
+.bio-head-icon{display:inline-flex;gap:2px}
+.bio-head-icon span{width:14px;height:10px;border:1px solid #ff0000;position:relative}
+.bio-head-icon span::after{content:'';position:absolute;right:-3px;top:3px;width:2px;height:4px;background:#ff0000}
+
+/* Top panels */
+.bio-top{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;position:relative;z-index:2}
+.bio-box{border:1px solid #ff0000;height:180px;position:relative;overflow:hidden;background:#000}
+.bio-box-hdr{display:flex;gap:3px;padding:6px 8px;border-bottom:1px solid rgba(255,0,0,.5)}
+.bio-box-hdr span{width:8px;height:8px;border:1px solid #ff0000;border-radius:50%}
+
+/* Distorted face canvas */
+#bioFaceCanvas{width:100%;height:calc(100% - 25px);display:block}
+
+/* GIF media — scaled to fit borders with red neon glow */
+.bio-gif{
+  width:100%;height:calc(100% - 25px);display:block;object-fit:cover;
+  filter:drop-shadow(0 0 6px rgba(255,0,0,.55)) drop-shadow(0 0 14px rgba(255,0,0,.3)) brightness(1.05) contrast(1.15);
+  mix-blend-mode:screen;
+}
+.bio-gif-tr{height:calc(100% - 25px)}
+
+/* Mid-row: shared GIF panel + data */
+.bio-mid{display:grid;grid-template-columns:130px 1fr;gap:10px;margin-bottom:10px;position:relative;z-index:2}
+.bio-left-col{display:flex;flex-direction:column;gap:10px}
+.bio-leftgif{
+  border:1px solid #ff0000;position:relative;overflow:hidden;aspect-ratio:1/2.05;padding:6px;
+  box-shadow:inset 0 0 12px rgba(255,0,0,.18);
+}
+.bio-leftgif::before,.bio-leftgif::after{content:'';position:absolute;width:10px;height:10px;border:1px solid #ff0000}
+.bio-leftgif::before{top:3px;left:3px;border-right:none;border-bottom:none}
+.bio-leftgif::after{top:3px;right:3px;border-left:none;border-bottom:none}
+.bio-fp-corner-bl,.bio-fp-corner-br{position:absolute;width:10px;height:10px;border:1px solid #ff0000}
+.bio-fp-corner-bl{bottom:3px;left:3px;border-right:none;border-top:none}
+.bio-fp-corner-br{bottom:3px;right:3px;border-left:none;border-top:none}
+.bio-gif-left{
+  width:100%;height:100%;object-fit:cover;display:block;
+  filter:drop-shadow(0 0 5px rgba(255,0,0,.55)) drop-shadow(0 0 12px rgba(255,0,0,.3)) brightness(1.05) contrast(1.2);
+  mix-blend-mode:screen;
+}
+
+/* Data rows */
+.bio-data{display:flex;flex-direction:column;gap:0;font-size:13px}
+.bio-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid #ff0000;border-bottom:none;letter-spacing:.06em;text-transform:uppercase;min-height:36px}
+.bio-row:last-child{border-bottom:1px solid #ff0000}
+.bio-row-label{font-weight:500}
+.bio-row-val{text-align:right;letter-spacing:.08em}
+.bio-censored{display:inline-block;background:#ff0000;color:#ff0000;padding:2px 50px;letter-spacing:0;user-select:none;position:relative}
+.bio-censored::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,#ff0000 0,#ff0000 3px,#cc0000 3px,#cc0000 6px)}
+.bio-stars{letter-spacing:.3em;font-size:14px}
+
+/* Biography block */
+.bio-desc-block{
+  border:1px solid #ff0000;padding:14px 14px 12px;margin-bottom:10px;position:relative;z-index:2;
+  font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.7;letter-spacing:.04em;
+  min-height:80px;text-transform:uppercase;
+}
+.bio-desc-label{font-size:11px;letter-spacing:.15em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,0,0,.5)}
+.bio-desc-text{font-size:12px;line-height:1.7;letter-spacing:.04em}
+.bio-desc-text.soon{
+  font-size:32px;letter-spacing:.3em;text-align:center;padding:14px 0;
+  animation:soonBlink 2s step-end infinite;text-shadow:0 0 12px rgba(255,0,0,.6);
+}
+@keyframes soonBlink{50%{opacity:.5}}
+html[dir=rtl] .bio-desc-text{letter-spacing:0}
+
+/* Oscilloscope wave */
+.bio-wave{border:1px solid #ff0000;padding:8px;position:relative;z-index:2;background:#000;height:110px}
+#bioWaveCanvas{width:100%;height:100%;display:block}
+
+/* Data stream numbers */
+.bio-stream{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;font-size:9px;letter-spacing:.1em;opacity:.7;position:relative;z-index:2}
+.bio-stream div{display:flex;gap:5px;flex-wrap:wrap}
+
+.bio-close-btn{
+  position:absolute;top:10px;right:40px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.15em;
+  color:#ff0000;background:#000;border:1px solid #ff0000;
+  padding:4px 10px;cursor:pointer;transition:all .2s;z-index:10;
+}
+.bio-close-btn:hover{background:#ff0000;color:#000}
+
+@media(max-width:520px){
+  .bio-top{grid-template-columns:1fr;gap:8px}
+  .bio-box{height:140px}
+  .bio-mid{grid-template-columns:100px 1fr}
+  .bio-row{font-size:11px;padding:7px 8px;min-height:32px}
+  .bio-head{font-size:12px}
+}
+
+/* Cards + roster items clickable */
+.card{cursor:pointer}
+.roster-item{cursor:pointer}
+
+/* Responsive */
+@media(max-width:760px){
+  .hud-tl,.hud-tr,.hud-bl{font-size:8px}
+  .section{padding:100px 4vw}
+  .section-hdr{flex-direction:column;align-items:flex-start;gap:14px}
+  .section-meta{text-align:left}
+  .card{flex:0 0 220px;height:380px}
+  .mainframe{padding:36px 24px}
+}
+</style>
+</head>
+<body>
+
+<!-- FIXED LAYERS -->
+<canvas id="rain-canvas"></canvas>
+<div class="grain"></div>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<!-- HUD -->
+<div class="hud hud-tl">
+  <span><span class="rec-dot"></span>X·RX·9₄ [REC]</span><br>
+  <span data-i18n="signal">SIGNAL_STRONG</span>
+</div>
+<div class="hud hud-tr" id="clock">00:00:00<br>ISO 800</div>
+<div class="hud hud-bl"><span class="blink" data-i18n="live">● LIVE FEED</span></div>
+
+<div class="lang">
+  <span id="l-en" onclick="setLang('en')">EN</span>
+  <span id="l-ar" onclick="setLang('ar')">AR</span>
+  <span id="l-de" onclick="setLang('de')">DE</span>
+</div>
+
+<!-- ═══════════════════════
+     GATE
+═══════════════════════ -->
+<div id="gate">
+  <!-- Radar widget (top-left) -->
+  <div class="gate-radar">
+    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="60" cy="60" r="56" fill="none" stroke="#cc0000" stroke-width=".8" opacity=".6"/>
+      <circle cx="60" cy="60" r="40" fill="none" stroke="#cc0000" stroke-width=".6" opacity=".4"/>
+      <circle cx="60" cy="60" r="22" fill="none" stroke="#cc0000" stroke-width=".6" opacity=".3"/>
+      <circle cx="60" cy="60" r="6"  fill="none" stroke="#cc0000" stroke-width=".8" opacity=".55"/>
+      <line x1="4" y1="60" x2="116" y2="60" stroke="#cc0000" stroke-width=".4" opacity=".25"/>
+      <line x1="60" y1="4" x2="60" y2="116" stroke="#cc0000" stroke-width=".4" opacity=".25"/>
+      <!-- sweep line -->
+      <g class="radar-sweep">
+        <defs>
+          <linearGradient id="sweepGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#ff2626" stop-opacity=".0"/>
+            <stop offset="100%" stop-color="#ff2626" stop-opacity=".9"/>
+          </linearGradient>
+        </defs>
+        <path d="M60,60 L116,60 A56,56 0 0,0 100,20 Z" fill="url(#sweepGrad)" opacity=".45"/>
+        <line x1="60" y1="60" x2="116" y2="60" stroke="#ff2626" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
+      <!-- blips -->
+      <circle cx="88" cy="34" r="2.5" fill="#ff2626">
+        <animate attributeName="opacity" values="1;0.1;1" dur="2.3s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="38" cy="82" r="1.8" fill="#ff4444">
+        <animate attributeName="opacity" values=".9;0.1;.9" dur="3.1s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="78" cy="90" r="1.5" fill="#cc0000">
+        <animate attributeName="opacity" values=".7;0;.7" dur="2.7s" repeatCount="indefinite"/>
+      </circle>
+    </svg>
+    <div class="radar-label">RADAR_LOCK</div>
+  </div>
+
+  <!-- Floating 3D wireframe shapes -->
+  <div class="float-shape s1">
+    <svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Wireframe cube (isometric projection) -->
+      <g class="wire" stroke-linejoin="round">
+        <polygon points="-25,-15 15,-30 35,-15 -5,0"/>
+        <polygon points="-25,-15 -25,25 -5,40 -5,0"/>
+        <polygon points="-5,0 35,-15 35,25 -5,40"/>
+        <line x1="-25" y1="25" x2="35" y2="25"/>
+        <line x1="15" y1="-30" x2="35" y2="25"/>
+      </g>
+    </svg>
+  </div>
+  <div class="float-shape s2">
+    <svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Octahedron / data node -->
+      <g class="wire">
+        <polygon points="0,-35 30,0 0,35 -30,0"/>
+        <line x1="0" y1="-35" x2="0" y2="35"/>
+        <line x1="-30" y1="0" x2="30" y2="0"/>
+        <circle cx="0" cy="0" r="4" fill="#cc0000" opacity=".5"/>
+      </g>
+    </svg>
+  </div>
+  <div class="float-shape s3">
+    <svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Tetrahedron -->
+      <g class="wire">
+        <polygon points="0,-35 32,18 -32,18"/>
+        <line x1="0" y1="-35" x2="0" y2="10"/>
+        <line x1="32" y1="18" x2="0" y2="10"/>
+        <line x1="-32" y1="18" x2="0" y2="10"/>
+      </g>
+    </svg>
+  </div>
+  <div class="float-shape s4">
+    <svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Hexagonal data ring -->
+      <g class="wire">
+        <polygon points="30,0 15,26 -15,26 -30,0 -15,-26 15,-26"/>
+        <polygon points="20,0 10,17 -10,17 -20,0 -10,-17 10,-17"/>
+        <line x1="30" y1="0" x2="20" y2="0"/>
+        <line x1="15" y1="26" x2="10" y2="17"/>
+        <line x1="-15" y1="26" x2="-10" y2="17"/>
+        <line x1="-30" y1="0" x2="-20" y2="0"/>
+        <line x1="-15" y1="-26" x2="-10" y2="-17"/>
+        <line x1="15" y1="-26" x2="10" y2="-17"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="gate-sub" data-i18n="gate_sub">▸ ACCESS CODE REQUIRED</div>
+  <h1 class="gate-main-title" data-text="HEIL USSR">HEIL USSR</h1>
+  <div class="gate-title" data-i18n="gate_title">Who's knocking?</div>
+  <div id="gate-pass">
+    <div class="gate-input-wrap">
+      <div class="gate-input-row">
+        <input id="gate-input" type="text" autocomplete="off" spellcheck="false" data-i18n-ph="gate_ph" placeholder="Enter access code...">
+        <button class="gate-btn" onclick="checkPass()" data-i18n="gate_btn">ENTER</button>
+      </div>
+    </div>
+    <div class="gate-access-pending" data-i18n="gate_pending">ACCESS PENDING</div>
+    <div id="gate-error" data-i18n="gate_err">⚠ ACCESS DENIED — INVALID CREDENTIALS</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════
+     MAIN
+═══════════════════════ -->
+<main id="main">
+
+<!-- HERO -->
+<section class="section" id="hero">
+  <div class="hero-tag reveal" data-i18n="tag">TOP SECRET // CLAN #USSR</div>
+  <h1 class="hero-title reveal" data-text="HEIL USSR">HEIL USSR</h1>
+  <div class="hero-sub reveal">
+    <p><span class="ar-w" data-i18n="owners">OWNERS</span> — <span class="ar-r">Blest</span> &amp; <span class="ar-r">OMI</span></p>
+    <p class="credits-line" data-i18n="credits">CREDITS — Na!f</p>
+  </div>
+  <div class="scroll-hint" data-i18n="scroll">SCROLL // 01</div>
+</section>
+
+<!-- EVIDENCE BOARD -->
+<section class="section" id="evidence">
+  <div class="section-hdr">
+    <div>
+      <div class="section-title decrypt" data-i18n="ev_title">EVIDENCE BOARD</div>
+    </div>
+    <div class="section-meta">
+      <span data-i18n="ev_sector">SECTOR: ROSTER</span><br>
+      <span data-i18n="ev_scan">SCANNING: ACTIVE</span>
+    </div>
+  </div>
+  <div class="evidence-wrap">
+    <div class="evidence-track" id="evTrack"></div>
+  </div>
+  <div class="ev-nav">
+    <button class="ev-btn" onclick="evScroll(-1)">‹</button>
+    <button class="ev-btn" onclick="evScroll(1)">›</button>
+  </div>
+</section>
+
+<!-- FULL ROSTER -->
+<section class="section" id="roster">
+  <div class="section-hdr">
+    <div class="section-title decrypt" data-i18n="r_title">MEMBERS</div>
+    <div class="section-meta">
+      <span data-i18n="r_count">46 OPERATIVES // ENCRYPTED</span><br>
+      <span>STATUS: ACTIVE</span>
+    </div>
+  </div>
+  <div class="roster-wrap">
+    <div class="roster-tier">
+      <div class="tier-header owners" data-i18n="tier_owners">▸ COMMAND // OWNERS</div>
+      <div class="tier-owners" id="tierOwners"></div>
+    </div>
+    <div class="roster-tier">
+      <div class="tier-header credits" data-i18n="tier_credits">▸ SPECIAL ROLE // CREDITS</div>
+      <div class="tier-credits" id="tierCredits"></div>
+    </div>
+    <div class="roster-tier">
+      <div class="tier-header members" data-i18n="tier_members">▸ OPERATIVES // MEMBERS</div>
+      <div class="roster-list" id="rosterList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- MAINFRAME -->
+<section class="section" id="mainframe">
+  <div class="section-hdr">
+    <div class="section-title decrypt" data-i18n="mf_title">#USSR</div>
+    <div class="section-meta">
+      <span data-i18n="mf_node">NODE: DISCORD</span><br>
+      <span data-i18n="mf_secure">SECURE LINK ESTABLISHED</span>
+    </div>
+  </div>
+  <div class="mainframe reveal">
+    <div class="mf-tag" data-i18n="mf_channel">▸ CHANNEL OPEN</div>
+    <div class="mf-title" data-i18n="mf_headline">Wanna join?</div>
+    <div class="mf-sub" data-i18n="mf_body">Join the network. 46 operatives and counting.</div>
+    <a class="mf-link" href="https://discord.gg/ussrx" target="_blank" rel="noopener">
+      <span class="pulse-dot"></span>
+      <svg class="disc-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+      <span data-i18n="mf_btn">discord.gg/ussrx</span>
+    </a>
+    <div class="mf-meta">
+      <span><span class="mf-meta-dot"></span><span data-i18n="mf_online">46 NODES ONLINE</span></span>
+      <span data-i18n="mf_latency">LATENCY: 12ms</span>
+      <span data-i18n="mf_uptime">UPTIME: 99.98%</span>
+    </div>
+  </div>
+  <div class="footer-note">
+    <span data-i18n="fn1">SECURE LINE ESTABLISHED</span><br>
+    © 2026 <span class="footer-naif">NAIF</span>. <span data-i18n="fn2">ALL RIGHTS CLASSIFIED</span>.
+  </div>
+</section>
+
+</main>
+
+<!-- ═══════════════════════
+     BIOGRAPHY MODAL — SUBJECT FILE
+═══════════════════════ -->
+<div class="bio-overlay" id="bioOverlay">
+  <div class="bio-bg" onclick="closeBio()"></div>
+  <div class="bio-panel">
+    <span class="bio-corner-bl"></span>
+    <span class="bio-corner-br"></span>
+    <div class="bio-scanlines"></div>
+    <button class="bio-close-btn" onclick="closeBio()">[ X ]</button>
+
+    <!-- Header -->
+    <div class="bio-head">
+      <div class="bio-head-id">SUBJECT <span id="bioSubjectId">A-000</span></div>
+      <div class="bio-head-icon"><span></span></div>
+    </div>
+
+    <!-- Top: distorted portrait + circuitry -->
+    <div class="bio-top">
+      <div class="bio-box">
+        <div class="bio-box-hdr"><span></span><span></span><span></span></div>
+        <canvas id="bioFaceCanvas"></canvas>
+      </div>
+      <div class="bio-box">
+        <img class="bio-gif bio-gif-tr" src="https://i.pinimg.com/originals/da/76/63/da7663586e488f796c986691ffe057e9.gif" alt="circuit feed" loading="lazy">
+      </div>
+    </div>
+
+    <!-- Mid: fingerprint + data -->
+    <div class="bio-mid">
+      <div class="bio-left-col">
+        <div class="bio-leftgif">
+          <span class="bio-fp-corner-bl"></span>
+          <span class="bio-fp-corner-br"></span>
+          <img class="bio-gif bio-gif-left" src="https://i.pinimg.com/originals/74/8b/8b/748b8bf85ea7d2a70cff56b97aff277a.gif" alt="biometric scan" loading="lazy">
+        </div>
+      </div>
+
+      <div class="bio-data">
+        <div class="bio-row"><span class="bio-row-label" data-i18n="sf_name">NAME</span><span class="bio-row-val" id="bioFieldName">—</span></div>
+        <div class="bio-row"><span class="bio-row-label" data-i18n="sf_incept">INCEPT DATE</span><span class="bio-row-val"><span class="bio-censored">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span></div>
+        <div class="bio-row"><span class="bio-row-label" data-i18n="sf_discipline">DISCIPLINE</span><span class="bio-row-val" id="bioFieldDisc">UNSTABLE</span></div>
+        <div class="bio-row"><span class="bio-row-label" data-i18n="sf_location">LAST KNOWN LOCATION</span><span class="bio-row-val">—————</span></div>
+        <div class="bio-row"><span class="bio-row-label" data-i18n="sf_threat">THREAT ASSESSMENT</span><span class="bio-row-val bio-stars">★ ★ ★</span></div>
+      </div>
+    </div>
+
+    <!-- Biography block -->
+    <div class="bio-desc-block">
+      <div class="bio-desc-label" data-i18n="sf_bio">▸ BIOGRAPHY</div>
+      <div class="bio-desc-text" id="bioDescText">SOON</div>
+    </div>
+
+    <!-- Oscilloscope wave -->
+    <div class="bio-wave">
+      <canvas id="bioWaveCanvas"></canvas>
+    </div>
+
+    <!-- Data stream -->
+    <div class="bio-stream">
+      <div>28 89 08054 70 90087</div>
+      <div>20 79 30001 27 14191</div>
+      <div>88 94440 43 40531</div>
+      <div>40 70 30319 35</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═════════════════════════════════════════
+   TRANSLATIONS
+════════════════════════════════════════ */
+const T = {
+  en:{signal:'SIGNAL_STRONG',live:'● LIVE FEED',sig_tracing:'SIGNAL TRACING...',lock:'LOCK ACQUIRED',st1:'INIT_SEQ_99',st2:'BYPASSING_FIREWALL',st3:'CHANNEL_ENCRYPTED',st4:'AWAITING_CREDENTIALS',gate_sub:'▸ ACCESS CODE REQUIRED',gate_title:"Who's knocking?",gate_ph:'Enter access code...',gate_btn:'ENTER',gate_err:'⚠ ACCESS DENIED — INVALID CREDENTIALS',gate_pending:'ACCESS PENDING',tag:'TOP SECRET // CLAN #USSR',owners:'OWNERS',credits:'CREDITS — Na!f',scroll:'SCROLL // 01',ev_title:'EVIDENCE BOARD',ev_sector:'SECTOR: ROSTER',ev_scan:'SCANNING: ACTIVE',r_title:'MEMBERS',r_count:'46 MEMBERS // ENCRYPTED',mf_title:'#USSR',mf_node:'NODE: DISCORD',mf_secure:'SECURE LINK ESTABLISHED',mf_channel:'▸ CHANNEL OPEN',mf_headline:'Wanna join?',mf_body:'Join the network. 46 operatives and counting.',mf_btn:'discord.gg/ussrx',mf_online:'46 NODES ONLINE',mf_latency:'LATENCY: 12ms',mf_uptime:'UPTIME: 99.98%',fn1:'SECURE LINE ESTABLISHED',fn2:'ALL RIGHTS CLASSIFIED',rO:'OWNER',rC:'CREDITS',rM:'MEMBER',bio_tag:'▸ BIOGRAPHY // CLASSIFIED',bio_soon:'SOON',bio_close:'[ CLOSE ]',bio_body:'Dossier under construction. Check back soon.',tier_owners:'▸ COMMAND // OWNERS',tier_credits:'▸ SPECIAL ROLE // CREDITS',tier_members:'▸ OPERATIVES // MEMBERS',sf_name:'NAME',sf_incept:'INCEPT DATE',sf_discipline:'DISCIPLINE',sf_location:'LAST KNOWN LOCATION',sf_threat:'THREAT ASSESSMENT',sf_bio:'▸ BIOGRAPHY'},
+  ar:{signal:'إشارة_قوية',live:'● بث مباشر',sig_tracing:'جاري التعقب...',lock:'تم القفل',st1:'تهيئة_99',st2:'تجاوز_الجدار_الناري',st3:'القناة_مشفرة',st4:'بانتظار_البيانات',gate_sub:'▸ رمز الدخول مطلوب',gate_title:'من الطارق؟',gate_ph:'أدخل رمز الدخول...',gate_btn:'دخول',gate_err:'⚠ تم رفض الوصول — بيانات غير صحيحة',gate_pending:'الوصول قيد الانتظار',tag:'سري للغاية // عشيرة #USSR',owners:'الملاك',credits:'شكر وتقدير — Na!f',scroll:'مرر // 01',ev_title:'لوحة الأدلة',ev_sector:'القطاع: القائمة',ev_scan:'المسح: نشط',r_title:'الأعضاء',r_count:'46 عضو // مشفرة',mf_title:'#USSR',mf_node:'العقدة: ديسكورد',mf_secure:'تم تأمين الاتصال',mf_channel:'▸ القناة مفتوحة',mf_headline:'تبي تنضم؟',mf_body:'انضم للشبكة. 46 عضو والعدد يزداد.',mf_btn:'discord.gg/ussrx',mf_online:'46 عقدة متصلة',mf_latency:'التأخير: 12 م.ث',mf_uptime:'وقت التشغيل: 99.98%',fn1:'تم تأمين الخط',fn2:'جميع الحقوق سرية',rO:'مالك',rC:'شكر',rM:'عضو',bio_tag:'▸ السيرة // سري',bio_soon:'قريباً',bio_close:'[ إغلاق ]',bio_body:'الملف قيد الإنشاء. عد قريباً.',tier_owners:'▸ القيادة // الملاك',tier_credits:'▸ دور خاص // شكر',tier_members:'▸ العملاء // الأعضاء',sf_name:'الاسم',sf_incept:'تاريخ البدء',sf_discipline:'الانضباط',sf_location:'آخر موقع',sf_threat:'تقييم التهديد',sf_bio:'▸ السيرة'},
+  de:{signal:'SIGNAL_STARK',live:'● LIVE ÜBERTRAGUNG',sig_tracing:'SIGNAL WIRD VERFOLGT...',lock:'FIXIERT',st1:'INIT_SEQ_99',st2:'FIREWALL_UMGEHEN',st3:'KANAL_VERSCHLÜSSELT',st4:'WARTE_AUF_ZUGANGSDATEN',gate_sub:'▸ ZUGANGSCODE ERFORDERLICH',gate_title:'Wer klopft?',gate_ph:'Zugangscode eingeben...',gate_btn:'EINGABE',gate_err:'⚠ ZUGANG VERWEIGERT — UNGÜLTIG',gate_pending:'ZUGRIFF AUSSTEHEND',tag:'STRENG GEHEIM // CLAN #USSR',owners:'BESITZER',credits:'CREDITS — Na!f',scroll:'SCROLLEN // 01',ev_title:'BEWEISTAFEL',ev_sector:'SEKTOR: LISTE',ev_scan:'SCAN: AKTIV',r_title:'MITGLIEDER',r_count:'46 MITGLIEDER // VERSCHLÜSSELT',mf_title:'#USSR',mf_node:'KNOTEN: DISCORD',mf_secure:'SICHERE VERBINDUNG',mf_channel:'▸ KANAL OFFEN',mf_headline:'Mitmachen?',mf_body:'Werde Teil des Netzwerks. 46 Agenten und mehr.',mf_btn:'discord.gg/ussrx',mf_online:'46 KNOTEN ONLINE',mf_latency:'LATENZ: 12ms',mf_uptime:'LAUFZEIT: 99.98%',fn1:'SICHERE LEITUNG AKTIV',fn2:'ALLE RECHTE GEHEIM',rO:'BESITZER',rC:'CREDITS',rM:'MITGLIED',bio_tag:'▸ BIOGRAFIE // GEHEIM',bio_soon:'BALD',bio_close:'[ SCHLIESSEN ]',bio_body:'Dossier wird erstellt. Schau bald wieder vorbei.',tier_owners:'▸ KOMMANDO // BESITZER',tier_credits:'▸ SONDERROLLE // CREDITS',tier_members:'▸ AGENTEN // MITGLIEDER',sf_name:'NAME',sf_incept:'ERSTELLDATUM',sf_discipline:'DISZIPLIN',sf_location:'LETZTER STANDORT',sf_threat:'BEDROHUNGSSTUFE',sf_bio:'▸ BIOGRAFIE'}
+};
+let lang = 'en';
+
+/* ═════════════════════════════════════════
+   ═══════════════════════════════════════
+         📝  EDIT THIS TO MANAGE MEMBERS
+   ═══════════════════════════════════════
+   
+   Single source of truth for every person in the clan.
+   Edit names, bios, or colors here — the UI will auto-update.
+
+   FIELDS:
+     id         — unique identifier (keep unique!)
+     name       — display name
+     role       — 'owner' | 'special' | 'member'
+     bio        — biography text (default 'SOON' shows blinking placeholder)
+     color      — hex code for name glow (e.g. '#d4a843' gold, '#ff2626' red)
+     discipline — (optional) shown on Subject File, defaults to 'UNSTABLE'
+════════════════════════════════════════ */
+const MEMBERS_DATA = [
+  // ─── OWNERS ────────────────────────────
+  { id:'blest',   name:'Blest',  role:'owner',   bio:'SOON', color:'#f5d788' },
+  { id:'omi',     name:'OMI',    role:'owner',   bio:'SOON', color:'#f5d788' },
+
+  // ─── SPECIAL ROLE (Credits) ────────────
+  { id:'naif',    name:'Na!f',   role:'special', bio:'SOON', color:'#e6c572' },
+
+  // ─── MEMBERS ───────────────────────────
+  { id:'vorzlyx',      name:'Vorzlyx',      role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'jxnziv',       name:'JxnzIV',       role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'n0rw3g1an',    name:'N0rw3g1an',    role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxscandi',  name:'USSRxSCANDI',  role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'m1styoo',      name:'M1styoo',      role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'terrorgx',     name:'TerrorGX',     role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'raeliana0',    name:'Raeliana 0',   role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'mikae6702',    name:'mikae6702',    role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxila',     name:'USSRxILA',     role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'dark3ndsou1',  name:'Dark3ndsou1',  role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'tn4b',         name:'Tn4b',         role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxk1',      name:'USSRxK1',      role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxmik',     name:'USSRxMIK',     role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxamqa',    name:'USSRxAMQA',    role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxsuguru',  name:'USSRxSuguru',  role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxsaysia',  name:'USSRxSAYSIA',  role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxkachatt', name:'USSRxKACHATT', role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxgecko',   name:'USSRxGECKO',   role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'xsourish',     name:'xSourish',     role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxvx',      name:'USSRxVX',      role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'kawaiithugs',  name:'KawaiiThugs',  role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxaayan',   name:'USSRxAAYAN',   role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ensqrr',       name:'Ensqrr',       role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxroro',    name:'USSRxROR0',    role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxmarle',   name:'USSRxMarle',   role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxalyssa',  name:'USSRxALYSSA',  role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxlyr',     name:'USSRxLYR',     role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'deepslqtes',   name:'Deepslqtes',   role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'zeyfexx',      name:'Zeyfexx',      role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'hyaeena',      name:'Hyaeena',      role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxf5m',     name:'USSRxF5M',     role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxtrax',    name:'USSRxTrax',    role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'xsakuuraa',    name:'xsakuuraa',    role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxharupie', name:'USSRxHarupie', role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'sinuber',      name:'Sinuber',      role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxzahra',   name:'USSRxZAHRA',   role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxea',      name:'USSRxEa',      role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxnaif',    name:'USSRxNAIF',    role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'flaredsaleh',  name:'FlaredSaleh',  role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxzxv',     name:'USSRxZXV',     role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxvm7',     name:'USSRxVm7',     role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'qb6i5',        name:'qb6i5',        role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'y6rb',         name:'y6rb',         role:'member', bio:'SOON', color:'#f0ece4' },
+  { id:'ussrxdevil',   name:'USSRxDEVIL',   role:'member', bio:'SOON', color:'#f0ece4' },
+];
+
+/* Derived groupings — do not edit, these auto-update from MEMBERS_DATA */
+const owners  = MEMBERS_DATA.filter(m => m.role === 'owner');
+const credits = MEMBERS_DATA.filter(m => m.role === 'special');
+const members = MEMBERS_DATA.filter(m => m.role === 'member');
+
+/* Quick lookup by id */
+const memberById = id => MEMBERS_DATA.find(m => m.id === id);
+
+/* ═════════════════════════════════════════
+   BUILD FUNCTIONS
+════════════════════════════════════════ */
+function buildEvidence(){
+  const t = T[lang];
+  const track = document.getElementById('evTrack');
+  if(!track) return;
+  track.innerHTML = '';
+  const all = MEMBERS_DATA.map((m, i) => {
+    const roleMap = {
+      owner:   { cls:'owner',   label:t.rO, role:'FOUNDER'   },
+      special: { cls:'credits', label:t.rC, role:'DEV'       },
+      member:  { cls:'member',  label:t.rM, role:'OPERATIVE' },
+    };
+    return { ...m, ...roleMap[m.role], idx:i+1 };
+  });
+  all.forEach(m => {
+    const c = document.createElement('div');
+    c.className = 'card ' + m.cls;
+    c.dataset.id = m.id;
+    const nameStyle = m.color ? `style="color:${m.color};text-shadow:0 0 16px ${m.color}66"` : '';
+    c.innerHTML = `
+      <div class="card-top">
+        <span class="case-id">CASE #${String(m.idx).padStart(3,'0')}</span>
+        <span class="corner-dots"><span></span><span></span><span></span></span>
+      </div>
+      <div class="card-center">
+        <div class="card-rank">${m.label}</div>
+        <div class="card-name" ${nameStyle}>${m.name}</div>
+        <div class="card-role">// ${m.role}</div>
+      </div>
+      <div class="card-bot">
+        <span class="card-status">ACTIVE</span>
+        <span class="card-decrypt">[ DECRYPT ]</span>
+      </div>`;
+    c.addEventListener('mousemove', e => {
+      const r = c.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - .5;
+      const py = (e.clientY - r.top)  / r.height - .5;
+      c.style.transform = `translateY(-14px) rotateY(${px*12}deg) rotateX(${-py*10}deg) scale(1.02)`;
+    });
+    c.addEventListener('mouseleave', () => { c.style.transform = ''; });
+    let downX = 0, downY = 0;
+    c.addEventListener('mousedown', e => { downX = e.clientX; downY = e.clientY; });
+    c.addEventListener('click', e => {
+      const dx = Math.abs(e.clientX - downX), dy = Math.abs(e.clientY - downY);
+      if(dx < 5 && dy < 5) window.openBio(m.id);
+    });
+    c.addEventListener('touchend', () => window.openBio(m.id));
+    track.appendChild(c);
+  });
+}
+
+function buildRoster(){
+  const t = T[lang];
+  const tOwners  = document.getElementById('tierOwners');
+  const tCredits = document.getElementById('tierCredits');
+  const list     = document.getElementById('rosterList');
+  if(!tOwners || !tCredits || !list) return;
+  tOwners.innerHTML = ''; tCredits.innerHTML = ''; list.innerHTML = '';
+
+  // Owners
+  owners.forEach((m, i) => {
+    const idx = MEMBERS_DATA.indexOf(m) + 1;
+    const c = document.createElement('div');
+    c.className = 'owner-card';
+    c.dataset.id = m.id;
+    const nameStyle = m.color ? `style="color:${m.color};text-shadow:0 0 20px ${m.color}73,2px 2px 0 rgba(0,0,0,.6)"` : '';
+    c.innerHTML = `
+      <div class="oc-num">CASE #${String(idx).padStart(3,'0')}</div>
+      <div class="oc-rank">${t.rO}</div>
+      <div class="oc-name" ${nameStyle}>${m.name}</div>
+      <div class="oc-status">● ACTIVE</div>`;
+    c.addEventListener('click', () => window.openBio(m.id));
+    tOwners.appendChild(c);
+  });
+
+  // Credits (special)
+  credits.forEach(m => {
+    const idx = MEMBERS_DATA.indexOf(m) + 1;
+    const c = document.createElement('div');
+    c.className = 'credits-card';
+    c.dataset.id = m.id;
+    const nameStyle = m.color ? `style="color:${m.color}"` : '';
+    c.innerHTML = `
+      <span class="cc-num">#${String(idx).padStart(3,'0')}</span>
+      <span class="cc-name" ${nameStyle}>${m.name}</span>
+      <span class="cc-tag">${t.rC}</span>`;
+    c.addEventListener('click', () => window.openBio(m.id));
+    tCredits.appendChild(c);
+  });
+
+  // Members
+  members.forEach((m, i) => {
+    const idx = MEMBERS_DATA.indexOf(m) + 1;
+    const row = document.createElement('div');
+    row.className = 'roster-item';
+    row.dataset.index = i;
+    row.dataset.id = m.id;
+    const nameStyle = m.color && m.color !== '#f0ece4' ? `style="color:${m.color}"` : '';
+    row.innerHTML = `<span class="r-num">${String(idx).padStart(2,'0')}</span><span class="r-name" ${nameStyle}>${m.name}</span><span class="r-tag">${t.rM}</span>`;
+    row.addEventListener('click', () => window.openBio(m.id));
+    list.appendChild(row);
+  });
+}
+
+function rebuildData(){ buildEvidence(); buildRoster(); }
+
+/* ═════════════════════════════════════════
+   LANGUAGE SWITCHER
+════════════════════════════════════════ */
+window.setLang = function(l){
+  lang = l;
+  const t = T[l], ar = l === 'ar';
+  document.documentElement.lang = l;
+  document.documentElement.dir  = ar ? 'rtl' : 'ltr';
+  ['en','ar','de'].forEach(x => {
+    const el = document.getElementById('l-'+x);
+    if(el) el.classList.toggle('active', x === l);
+  });
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    if(t[k] !== undefined) el.textContent = t[k];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const k = el.dataset.i18nPh;
+    if(t[k] !== undefined) el.placeholder = t[k];
+  });
+  try { rebuildData(); } catch(err) { /* data not ready yet */ }
+};
+
+/* ═════════════════════════════════════════
+   PASSWORD
+════════════════════════════════════════ */
+window.checkPass = function(){
+  const input = document.getElementById('gate-input');
+  if(!input) return;
+  const v = input.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase();
+  if(v === 'HEILUSSR'){
+    const gate = document.getElementById('gate');
+    gate.classList.add('glitching');
+    document.body.classList.add('unlocked');
+    setTimeout(() => {
+      gate.style.display = 'none';
+      document.getElementById('main').classList.add('ready');
+      setTimeout(runReveal, 100);
+    }, 900);
+  } else {
+    const e = document.getElementById('gate-error');
+    e.classList.remove('show'); void e.offsetWidth; e.classList.add('show');
+    input.style.borderColor = '#ff2020';
+    input.style.boxShadow   = '0 0 18px rgba(255,30,30,.5)';
+    setTimeout(() => { input.style.borderColor = ''; input.style.boxShadow = ''; }, 700);
+  }
+};
+
+/* ═════════════════════════════════════════
+   EVIDENCE SLIDER — navigation + drag
+════════════════════════════════════════ */
+let evOffset = 0;
+window.evScroll = function(dir){
+  const track = document.getElementById('evTrack');
+  if(!track) return;
+  const card = track.querySelector('.card');
+  if(!card) return;
+  const step = (card.offsetWidth + 22) * 2;
+  const max  = track.scrollWidth - innerWidth + 40;
+  evOffset = Math.max(-max, Math.min(0, evOffset - dir * step));
+  track.style.transform = `translateX(${evOffset}px)`;
+};
+
+/* ═════════════════════════════════════════
+   BIOGRAPHY MODAL — SUBJECT FILE
+════════════════════════════════════════ */
+// Helpers for the visual canvases inside the modal
+let _bioWaveRAF = null, _bioFaceDrawn = false;
+
+function drawBioFace(name){
+  const cv = document.getElementById('bioFaceCanvas');
+  if(!cv) return;
+  const w = cv.width = cv.clientWidth;
+  const h = cv.height = cv.clientHeight;
+  const cx = cv.getContext('2d');
+  cx.clearRect(0,0,w,h);
+  cx.fillStyle = '#000';
+  cx.fillRect(0,0,w,h);
+
+  // Seeded hash from name so each member gets a unique but stable pattern
+  let seed = 0;
+  for(let i=0;i<name.length;i++) seed = (seed*31 + name.charCodeAt(i)) & 0xffffffff;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+
+  // Distorted red splatter cloud — dithered pixels
+  const cxC = w * 0.5, cyC = h * 0.55;
+  const maxR = Math.min(w, h) * 0.55;
+  const pxSize = 2;
+  for(let y = 0; y < h; y += pxSize){
+    for(let x = 0; x < w; x += pxSize){
+      const dx = x - cxC, dy = y - cyC;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      // Warped falloff with noise for that distorted-head look
+      const warp = Math.sin(dy * 0.08 + rnd() * 2) * 15 + Math.cos(dx * 0.1) * 10;
+      const falloff = 1 - (dist + warp) / maxR;
+      const density = falloff + rnd() * 0.3 - 0.15;
+      if(density > 0.1 && rnd() < density){
+        const shade = 100 + Math.floor(rnd() * 155);
+        cx.fillStyle = `rgb(${shade},0,0)`;
+        cx.fillRect(x, y, pxSize, pxSize);
+      }
+    }
+  }
+}
+
+function startBioWave(){
+  const cv = document.getElementById('bioWaveCanvas');
+  if(!cv) return;
+  const w = cv.width = cv.clientWidth;
+  const h = cv.height = cv.clientHeight;
+  const ctx = cv.getContext('2d');
+  let t = 0;
+
+  function frame(){
+    ctx.clearRect(0, 0, w, h);
+    // Grid
+    ctx.strokeStyle = 'rgba(255,0,0,0.22)';
+    ctx.lineWidth = 0.5;
+    const gx = w / 20, gy = h / 6;
+    for(let i = 0; i <= 20; i++){ ctx.beginPath(); ctx.moveTo(i*gx, 0); ctx.lineTo(i*gx, h); ctx.stroke(); }
+    for(let i = 0; i <= 6;  i++){ ctx.beginPath(); ctx.moveTo(0, i*gy); ctx.lineTo(w, i*gy); ctx.stroke(); }
+
+    // Two overlapping sine waves
+    ctx.strokeStyle = '#ff0000';
+    ctx.lineWidth = 1.6;
+    ctx.shadowBlur = 6; ctx.shadowColor = '#ff0000';
+    ctx.beginPath();
+    for(let x = 0; x < w; x++){
+      const y = h/2 + Math.sin((x + t) * 0.04) * h * 0.28 + Math.sin((x + t*1.3) * 0.08) * h * 0.1;
+      if(x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    for(let x = 0; x < w; x++){
+      const y = h/2 + Math.sin((x - t*0.8) * 0.06) * h * 0.22;
+      if(x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+
+    t += 2;
+    _bioWaveRAF = requestAnimationFrame(frame);
+  }
+  if(_bioWaveRAF) cancelAnimationFrame(_bioWaveRAF);
+  _bioWaveRAF = requestAnimationFrame(frame);
+}
+
+function stopBioWave(){
+  if(_bioWaveRAF){ cancelAnimationFrame(_bioWaveRAF); _bioWaveRAF = null; }
+}
+
+window.openBio = function(id){
+  const m = memberById(id);
+  if(!m) return;
+  const ov = document.getElementById('bioOverlay');
+  if(!ov) return;
+
+  const idx = MEMBERS_DATA.indexOf(m) + 1;
+  const subjectId = (m.role === 'owner'   ? 'O-'
+                   : m.role === 'special' ? 'S-'
+                   : 'A-') + String(idx).padStart(3,'0');
+
+  const idEl   = document.getElementById('bioSubjectId');
+  const nmEl   = document.getElementById('bioFieldName');
+  const discEl = document.getElementById('bioFieldDisc');
+  const descEl = document.getElementById('bioDescText');
+
+  if(idEl)   idEl.textContent = subjectId;
+  if(nmEl){
+    nmEl.textContent = m.name.toUpperCase();
+    nmEl.style.color = m.color || '';
+  }
+  if(discEl) discEl.textContent = (m.discipline || 'UNSTABLE').toUpperCase();
+
+  // Biography: if bio is 'SOON' (default), show big blinking SOON style
+  const isSoon = !m.bio || m.bio.toUpperCase() === 'SOON';
+  if(descEl){
+    descEl.className = 'bio-desc-text' + (isSoon ? ' soon' : '');
+    descEl.textContent = isSoon ? 'SOON' : m.bio;
+  }
+
+  ov.classList.add('open');
+  // Draw canvases after the modal is visible so dimensions are correct
+  requestAnimationFrame(() => {
+    drawBioFace(m.name);
+    startBioWave();
+  });
+};
+
+window.closeBio = function(){
+  const ov = document.getElementById('bioOverlay');
+  if(ov) ov.classList.remove('open');
+  stopBioWave();
+};
+
+/* ═════════════════════════════════════════
+   SCROLL REVEALS & DECRYPT
+════════════════════════════════════════ */
+function splitDecrypt(el){
+  if(el.dataset.split) return;
+  el.dataset.split = '1';
+  const txt = el.textContent;
+  el.textContent = '';
+  [...txt].forEach((ch,i) => {
+    const s = document.createElement('span');
+    s.className = 'ch';
+    s.textContent = ch === ' ' ? '\u00a0' : ch;
+    s.style.transitionDelay = (i*25) + 'ms';
+    el.appendChild(s);
+  });
+}
+
+function runReveal(){
+  document.querySelectorAll('.decrypt').forEach(splitDecrypt);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if(e.isIntersecting){
+        e.target.classList.add('in');
+        if(e.target.classList.contains('roster-item')){
+          const i = parseInt(e.target.dataset.index || 0);
+          e.target.style.animationDelay = (i*20) + 'ms';
+        }
+      }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal, .decrypt, .section-hdr, .roster-item').forEach(el => io.observe(el));
+}
+
+/* ═════════════════════════════════════════
+   INTERACTIVE RED RAIN
+════════════════════════════════════════ */
+(function(){
+  const cv = document.getElementById('rain-canvas');
+  if(!cv) return;
+  const cx = cv.getContext('2d');
+  let W, H, drops;
+  const mouse = { x:-9999, y:-9999, vx:0, vy:0, px:0, py:0 };
+  const COLS = ['#880000','#aa0000','#cc0000','#ee2222','#ff3333','#660000'];
+
+  function init(){
+    W = cv.width  = innerWidth;
+    H = cv.height = innerHeight;
+    const n = Math.min(160, Math.floor(W/12));
+    drops = Array.from({length:n}, () => ({
+      x: Math.random()*W,
+      y: Math.random()*H*1.4 - H*0.4,
+      len: 15 + Math.random()*55,
+      spd: 2 + Math.random()*4.5,
+      col: COLS[Math.floor(Math.random()*COLS.length)],
+      a: .12 + Math.random()*.5,
+      ang: (Math.random() - .5) * .12,
+      vx: 0
+    }));
+  }
+  init();
+  addEventListener('resize', init);
+  addEventListener('mousemove', e => {
+    mouse.vx = e.clientX - mouse.px;
+    mouse.vy = e.clientY - mouse.py;
+    mouse.px = e.clientX; mouse.py = e.clientY;
+    mouse.x  = e.clientX; mouse.y  = e.clientY;
+  });
+
+  let last = 0;
+  function draw(ts){
+    if(ts - last < 25){ requestAnimationFrame(draw); return; }
+    last = ts;
+    cx.fillStyle = 'rgba(3,2,2,.22)';
+    cx.fillRect(0, 0, W, H);
+    drops.forEach(d => {
+      const dx = d.x - mouse.x, dy = d.y - mouse.y;
+      const dist2 = dx*dx + dy*dy;
+      if(dist2 < 18000){
+        const f = (18000 - dist2) / 18000;
+        d.vx += (dx / Math.sqrt(dist2 + 1)) * f * 0.6;
+        d.vx += mouse.vx * f * 0.03;
+      }
+      d.vx *= 0.94;
+      const drawX = d.x + d.vx;
+      const drawEndX = drawX + Math.sin(d.ang) * d.len;
+      cx.beginPath();
+      cx.moveTo(drawX, d.y);
+      cx.lineTo(drawEndX, d.y + d.len);
+      cx.strokeStyle = d.col + Math.round(d.a*255).toString(16).padStart(2,'0');
+      cx.lineWidth = .7 + Math.random()*.5;
+      cx.stroke();
+      d.y += d.spd;
+      if(d.y > H + 30){
+        d.y = -d.len - Math.random()*60;
+        d.x = Math.random()*W;
+        d.a = .12 + Math.random()*.5;
+        d.vx = 0;
+      }
+    });
+    mouse.vx *= 0.85; mouse.vy *= 0.85;
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+
+/* ═════════════════════════════════════════
+   CLOCK
+════════════════════════════════════════ */
+setInterval(() => {
+  const n = new Date(), p = x => String(x).padStart(2,'0');
+  const cl = document.getElementById('clock');
+  if(cl) cl.innerHTML = `${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}<br>ISO 800`;
+}, 1000);
+
+/* ═════════════════════════════════════════
+   INIT — everything declared, now wire up
+════════════════════════════════════════ */
+(function initApp(){
+  // Input listeners
+  const gi = document.getElementById('gate-input');
+  if(gi){
+    gi.addEventListener('keydown', e => { if(e.key === 'Enter') window.checkPass(); });
+  }
+
+  // ESC closes bio modal
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') window.closeBio();
+  });
+
+  // Evidence slider drag
+  const track = document.getElementById('evTrack');
+  if(track){
+    let down = false, startX = 0, startOff = 0;
+    track.addEventListener('mousedown', e => { down = true; startX = e.clientX; startOff = evOffset; track.style.transition = 'none'; });
+    addEventListener('mouseup', () => { if(down){ down = false; track.style.transition = ''; } });
+    addEventListener('mousemove', e => {
+      if(!down) return;
+      const dx = e.clientX - startX;
+      const max = track.scrollWidth - innerWidth + 40;
+      evOffset = Math.max(-max, Math.min(0, startOff + dx));
+      track.style.transform = `translateX(${evOffset}px)`;
+    });
+    track.addEventListener('touchstart', e => { down = true; startX = e.touches[0].clientX; startOff = evOffset; track.style.transition = 'none'; }, { passive: true });
+    addEventListener('touchend', () => { if(down){ down = false; track.style.transition = ''; } });
+    addEventListener('touchmove', e => {
+      if(!down) return;
+      const dx = e.touches[0].clientX - startX;
+      const max = track.scrollWidth - innerWidth + 40;
+      evOffset = Math.max(-max, Math.min(0, startOff + dx));
+      track.style.transform = `translateX(${evOffset}px)`;
+    }, { passive: true });
+  }
+
+  // Build data + set initial language (both safe now)
+  rebuildData();
+  window.setLang('en');
+})();
+</script>
+</body>
+</html>
